@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RelationshipType {
+  father
+  mother
+  spouse
+  child
+
+  @@map("relationship_type")
+}
+
+model Profile {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName       String   @map("full_name")
+  normalizedName String?  @map("normalized_name")
+  dateOfBirth    DateTime? @map("date_of_birth") @db.Date
+  dateOfDeath    DateTime? @map("date_of_death") @db.Date
+  gender         String?
+  notes          String?
+  isDeceased     Boolean  @default(false) @map("is_deceased")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  relationshipsFrom Relationship[] @relation("RelationshipFrom")
+  relationshipsTo   Relationship[] @relation("RelationshipTo")
+
+  @@index([fullName], map: "idx_profiles_full_name")
+  @@index([normalizedName], map: "idx_profiles_normalized_name")
+  @@index([dateOfBirth], map: "idx_profiles_date_of_birth")
+  @@map("profiles")
+}
+
+model Relationship {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  personId          String           @map("person_id") @db.Uuid
+  relatedPersonId   String           @map("related_person_id") @db.Uuid
+  relationshipType  RelationshipType @map("relationship_type")
+  notes             String?
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  person        Profile @relation("RelationshipFrom", fields: [personId], references: [id], onDelete: Cascade)
+  relatedPerson Profile @relation("RelationshipTo", fields: [relatedPersonId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, relatedPersonId, relationshipType], map: "relationships_unique_link")
+  @@index([personId], map: "idx_relationships_person_id")
+  @@index([relatedPersonId], map: "idx_relationships_related_person_id")
+  @@index([relationshipType], map: "idx_relationships_type")
+  @@index([personId, relationshipType], map: "idx_relationships_person_type")
+  @@index([relatedPersonId, relationshipType], map: "idx_relationships_related_type")
+  @@map("relationships")
+}
