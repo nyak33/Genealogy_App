@@ -57,6 +57,12 @@ Seed local sample data:
 npm.cmd run prisma:seed
 ```
 
+Run tests:
+
+```bash
+npm.cmd run test
+```
+
 Start the development server:
 
 ```bash
@@ -110,6 +116,22 @@ prisma migrate reset
 ```
 
 Use normal migration and seed commands during development.
+
+## Testing Notes
+
+The checked-in tests focus on validation and service logic that can run without a database. They cover name normalization, profile validation, relationship validation, search query behavior, duplicate-check query behavior, relationship conflict rules, spouse bidirectional display mapping, and child display from reverse parent lookup.
+
+Manual database QA is still recommended after migrations and seed data are applied locally:
+
+- Create and edit a profile
+- Confirm `updatedAt` changes after edit
+- Search by partial name and verify empty search returns no records
+- Trigger duplicate warning and confirm creating a different person
+- Add father, mother, spouse, and child relationships
+- Confirm spouse displays from both profiles
+- Confirm children display from reverse father/mother lookup
+- Confirm self-link, duplicate, conflicting relationship, and reverse spouse duplicate attempts fail
+- Delete a relationship and confirm profile records remain
 
 ## MVP Scope
 
