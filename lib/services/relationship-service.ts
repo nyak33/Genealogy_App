@@ -16,7 +16,9 @@ export class RelationshipConflictError extends Error {
 
 const relationshipProfileSelect = {
   id: true,
-  fullName: true
+  fullName: true,
+  dateOfBirth: true,
+  dateOfDeath: true
 } satisfies Prisma.ProfileSelect;
 
 const relationshipSelect = {
@@ -34,6 +36,8 @@ export type RelationshipProfileLink = {
   profile: {
     id: string;
     fullName: string;
+    dateOfBirth: Date | null;
+    dateOfDeath: Date | null;
   };
 };
 

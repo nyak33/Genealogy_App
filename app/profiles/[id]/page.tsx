@@ -42,23 +42,47 @@ export default async function ProfileDetailPage({
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <DetailItem label="Date of Birth" value={formatDate(profile.dateOfBirth)} />
-        <DetailItem label="Date of Death" value={formatDate(profile.dateOfDeath)} />
-        <DetailItem label="Gender" value={profile.gender ?? "Not recorded"} />
-        <DetailItem
-          label="Status"
-          value={profile.isDeceased ? "Deceased" : "Living or unknown"}
-        />
-        <DetailItem label="Created" value={formatDate(profile.createdAt)} />
-        <DetailItem label="Updated" value={formatDate(profile.updatedAt)} />
-      </div>
+      <section className="space-y-5 rounded border border-line bg-white p-6">
+        <div>
+          <h2 className="text-xl font-semibold text-ink">Profile Summary</h2>
+          <p className="mt-1 text-sm text-neutral-700">
+            Core profile details for this family member.
+          </p>
+        </div>
 
-      <section className="rounded border border-line bg-white p-6">
-        <h2 className="text-lg font-semibold text-ink">Notes</h2>
-        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-neutral-700">
-          {profile.notes || "No notes recorded."}
-        </p>
+        <div>
+          <p className="text-xs font-semibold uppercase text-neutral-500">
+            Full Name
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-ink">
+            {profile.fullName}
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <DetailItem
+            label="Date of Birth"
+            value={formatDate(profile.dateOfBirth)}
+          />
+          <DetailItem
+            label="Date of Death"
+            value={formatDate(profile.dateOfDeath)}
+          />
+          <DetailItem label="Gender" value={profile.gender ?? "Not recorded"} />
+          <DetailItem
+            label="Status"
+            value={profile.isDeceased ? "Deceased" : "Living or unknown"}
+          />
+          <DetailItem label="Created" value={formatDate(profile.createdAt)} />
+          <DetailItem label="Updated" value={formatDate(profile.updatedAt)} />
+        </div>
+
+        <div className="rounded border border-line bg-paper p-4">
+          <h3 className="text-sm font-semibold text-ink">Notes</h3>
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-neutral-700">
+            {profile.notes || "No notes recorded."}
+          </p>
+        </div>
       </section>
 
       <RelationshipManager
