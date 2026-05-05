@@ -20,6 +20,7 @@ vi.mock("@/lib/db", () => ({
 const {
   createRelationship,
   getProfileRelationships,
+  getProfileTreeRelationships,
   RelationshipConflictError
 } = await import("@/lib/services/relationship-service");
 
@@ -158,5 +159,173 @@ describe("relationship service", () => {
     expect(relationships.father[0].profile.id).toBe(secondProfileId);
     expect(relationships.spouses[0].profile.id).toBe(secondProfileId);
     expect(relationships.children[0].profile.id).toBe(thirdProfileId);
+  });
+
+  it("enriches tree children with father and missing mother links", async () => {
+    mockPrisma.relationship.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: "child-link",
+          relationshipType: "father",
+          person: {
+            id: thirdProfileId,
+            fullName: "Iman Amin",
+            dateOfBirth: new Date("2012-06-15"),
+            dateOfDeath: null
+          }
+        }
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: "father-link",
+          relationshipType: "father",
+          relatedPerson: {
+            id: firstProfileId,
+            fullName: "Muhamad Syaqir",
+            dateOfBirth: null,
+            dateOfDeath: null
+          }
+        }
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    const relationships = await getProfileTreeRelationships(firstProfileId);
+
+    expect(relationships.children[0].profile.fullName).toBe("Iman Amin");
+    expect(relationships.children[0].father?.fullName).toBe("Muhamad Syaqir");
+    expect(relationships.children[0].mother).toBeNull();
+  });
+
+  it("enriches tree children with both biological parents", async () => {
+    mockPrisma.relationship.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: "child-link",
+          relationshipType: "father",
+          person: {
+            id: thirdProfileId,
+            fullName: "Adam Syaqir",
+            dateOfBirth: new Date("2020-01-01"),
+            dateOfDeath: null
+          }
+        }
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: "father-link",
+          relationshipType: "father",
+          relatedPerson: {
+            id: firstProfileId,
+            fullName: "Muhamad Syaqir",
+            dateOfBirth: null,
+            dateOfDeath: null
+          }
+        },
+        {
+          id: "mother-link",
+          relationshipType: "mother",
+          relatedPerson: {
+            id: secondProfileId,
+            fullName: "Nora Aziz",
+            dateOfBirth: null,
+            dateOfDeath: null
+          }
+        }
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    const relationships = await getProfileTreeRelationships(firstProfileId);
+
+    expect(relationships.children[0].father?.fullName).toBe("Muhamad Syaqir");
+    expect(relationships.children[0].mother?.fullName).toBe("Nora Aziz");
+  });
+
+  it("does not treat a spouse as a child parent unless linked as father or mother", async () => {
+    mockPrisma.relationship.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: "spouse-link",
+          personId: firstProfileId,
+          relatedPersonId: secondProfileId,
+          relationshipType: "spouse",
+          person: {
+            id: firstProfileId,
+            fullName: "Muhamad Syaqir",
+            dateOfBirth: null,
+            dateOfDeath: null
+          },
+          relatedPerson: {
+            id: secondProfileId,
+            fullName: "Nora Aziz",
+            dateOfBirth: null,
+            dateOfDeath: null
+          }
+        }
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: "child-link",
+          relationshipType: "father",
+          person: {
+            id: thirdProfileId,
+            fullName: "Iman Amin",
+            dateOfBirth: null,
+            dateOfDeath: null
+          }
+        }
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: "father-link",
+          relationshipType: "father",
+          relatedPerson: {
+            id: firstProfileId,
+            fullName: "Muhamad Syaqir",
+            dateOfBirth: null,
+            dateOfDeath: null
+          }
+        }
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    const relationships = await getProfileTreeRelationships(firstProfileId);
+
+    expect(relationships.spouses[0].profile.fullName).toBe("Nora Aziz");
+    expect(relationships.children[0].father?.fullName).toBe("Muhamad Syaqir");
+    expect(relationships.children[0].mother).toBeNull();
+  });
+
+  it("keeps empty child parent links safe for tree display", async () => {
+    mockPrisma.relationship.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: "child-link",
+          relationshipType: "father",
+          person: {
+            id: thirdProfileId,
+            fullName: "Iman Amin",
+            dateOfBirth: null,
+            dateOfDeath: null
+          }
+        }
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    const relationships = await getProfileTreeRelationships(firstProfileId);
+
+    expect(relationships.children[0].father).toBeNull();
+    expect(relationships.children[0].mother).toBeNull();
   });
 });

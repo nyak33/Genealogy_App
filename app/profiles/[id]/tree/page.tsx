@@ -5,7 +5,7 @@ import {
   getProfileById,
   ProfileNotFoundError
 } from "@/lib/services/profile-service";
-import { getProfileRelationships } from "@/lib/services/relationship-service";
+import { getProfileTreeRelationships } from "@/lib/services/relationship-service";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,7 @@ type ProfileTreePageProps = {
 export default async function ProfileTreePage({ params }: ProfileTreePageProps) {
   const { id } = await params;
   const profile = await loadProfile(id);
-  const relationships = await getProfileRelationships(id);
+  const relationships = await getProfileTreeRelationships(id);
 
   return (
     <section className="space-y-6">

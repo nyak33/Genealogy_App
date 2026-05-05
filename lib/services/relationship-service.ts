@@ -48,6 +48,15 @@ export type ProfileRelationships = {
   children: RelationshipProfileLink[];
 };
 
+export type TreeChildProfileLink = RelationshipProfileLink & {
+  father: RelationshipProfileLink["profile"] | null;
+  mother: RelationshipProfileLink["profile"] | null;
+};
+
+export type ProfileTreeRelationships = Omit<ProfileRelationships, "children"> & {
+  children: TreeChildProfileLink[];
+};
+
 async function ensureProfilesExist(personId: string, relatedPersonId: string) {
   const profiles = await prisma.profile.findMany({
     where: {
@@ -204,6 +213,27 @@ export async function getProfileRelationships(profileId: string) {
       profile: relationship.person
     }))
   } satisfies ProfileRelationships;
+}
+
+export async function getProfileTreeRelationships(profileId: string) {
+  const relationships = await getProfileRelationships(profileId);
+
+  const children = await Promise.all(
+    relationships.children.map(async (child) => {
+      const childRelationships = await getProfileRelationships(child.profile.id);
+
+      return {
+        ...child,
+        father: childRelationships.father[0]?.profile ?? null,
+        mother: childRelationships.mother[0]?.profile ?? null
+      };
+    })
+  );
+
+  return {
+    ...relationships,
+    children
+  } satisfies ProfileTreeRelationships;
 }
 
 export async function createRelationship(input: CreateRelationshipInput) {

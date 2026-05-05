@@ -13,13 +13,15 @@ type TreePersonCardProps = {
   person?: TreePerson | null;
   emptyMessage: string;
   highlight?: boolean;
+  details?: string[];
 };
 
 export function TreePersonCard({
   label,
   person,
   emptyMessage,
-  highlight = false
+  highlight = false,
+  details = []
 }: TreePersonCardProps) {
   return (
     <div
@@ -42,6 +44,13 @@ export function TreePersonCard({
             {person.fullName}
           </Link>
           <PersonDates person={person} />
+          {details.length > 0 ? (
+            <div className="mt-3 space-y-1 text-xs text-neutral-700">
+              {details.map((detail) => (
+                <p key={detail}>{detail}</p>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : (
         <p className="mt-3 text-sm leading-6 text-neutral-600">

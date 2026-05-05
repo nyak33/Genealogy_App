@@ -1,4 +1,4 @@
-import type { ProfileRelationships } from "@/lib/services/relationship-service";
+import type { ProfileTreeRelationships } from "@/lib/services/relationship-service";
 import {
   TreePersonCard,
   type TreePerson
@@ -6,7 +6,7 @@ import {
 
 type SimpleFamilyTreeProps = {
   profile: TreePerson;
-  relationships: ProfileRelationships;
+  relationships: ProfileTreeRelationships;
 };
 
 export function SimpleFamilyTree({
@@ -80,6 +80,10 @@ export function SimpleFamilyTree({
                 label="Child"
                 person={child.profile}
                 emptyMessage="No children linked yet."
+                details={[
+                  `Father: ${child.father?.fullName ?? "Not linked"}`,
+                  `Mother: ${child.mother?.fullName ?? "Not linked"}`
+                ]}
               />
             ))}
           </div>
