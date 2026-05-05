@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import {
   createRelationship,
   RelationshipConflictError,
-  RelationshipInputError
+  RelationshipInputError,
+  RelationshipParentAgeWarningError
 } from "@/lib/services/relationship-service";
 import { createRelationshipSchema } from "@/lib/validators/relationship";
 
@@ -25,6 +26,17 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ relationship }, { status: 201 });
   } catch (error) {
+    if (error instanceof RelationshipParentAgeWarningError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: error.code,
+          requiresConfirmation: error.requiresConfirmation
+        },
+        { status: error.status }
+      );
+    }
+
     if (
       error instanceof RelationshipInputError ||
       error instanceof RelationshipConflictError

@@ -14,6 +14,12 @@ export class RelationshipConflictError extends Error {
   status = 409;
 }
 
+export class RelationshipParentAgeWarningError extends Error {
+  status = 409;
+  code = "PARENT_AGE_WARNING";
+  requiresConfirmation = true;
+}
+
 const relationshipProfileSelect = {
   id: true,
   fullName: true,
@@ -131,6 +137,55 @@ async function ensureSingleParentRelationship(input: CreateRelationshipInput) {
   }
 }
 
+async function ensureParentAgeIsReasonable(input: CreateRelationshipInput) {
+  if (
+    input.relationshipType !== RelationshipType.father &&
+    input.relationshipType !== RelationshipType.mother
+  ) {
+    return;
+  }
+
+  const profiles = await prisma.profile.findMany({
+    where: {
+      id: {
+        in: [input.personId, input.relatedPersonId]
+      }
+    },
+    select: {
+      id: true,
+      dateOfBirth: true
+    }
+  });
+
+  const child = profiles.find((profile) => profile.id === input.personId);
+  const parent = profiles.find(
+    (profile) => profile.id === input.relatedPersonId
+  );
+
+  if (!child?.dateOfBirth || !parent?.dateOfBirth) {
+    return;
+  }
+
+  if (parent.dateOfBirth >= child.dateOfBirth) {
+    throw new RelationshipInputError("Parent must be older than child.");
+  }
+
+  if (
+    !input.confirmParentAgeWarning &&
+    addCalendarYears(parent.dateOfBirth, 12) > child.dateOfBirth
+  ) {
+    throw new RelationshipParentAgeWarningError(
+      "This parent appears to be less than 12 years older than the child. Please confirm the dates are correct."
+    );
+  }
+}
+
+function addCalendarYears(date: Date, years: number) {
+  const result = new Date(date);
+  result.setFullYear(result.getFullYear() + years);
+  return result;
+}
+
 export async function getProfileRelationships(profileId: string) {
   const [parentRows, spouseRows, childRows] = await Promise.all([
     prisma.relationship.findMany({
@@ -244,6 +299,7 @@ export async function createRelationship(input: CreateRelationshipInput) {
   await ensureProfilesExist(input.personId, input.relatedPersonId);
   await ensureNoDuplicateRelationship(input);
   await ensureSingleParentRelationship(input);
+  await ensureParentAgeIsReasonable(input);
 
   try {
     return await prisma.relationship.create({

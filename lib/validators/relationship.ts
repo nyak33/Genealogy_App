@@ -26,7 +26,8 @@ export const createRelationshipSchema = z
       .preprocess(
         (value) => (value === "" ? undefined : value),
         z.string().optional().nullable()
-      )
+      ),
+    confirmParentAgeWarning: z.boolean().optional()
   })
   .strict()
   .refine((value) => value.personId !== value.relatedPersonId, {

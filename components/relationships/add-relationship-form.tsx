@@ -8,6 +8,12 @@ import {
 
 type RelationshipType = "father" | "mother" | "spouse" | "child";
 type ParentRole = "father" | "mother";
+type RelationshipPayload = {
+  personId: string;
+  relatedPersonId: string;
+  relationshipType: RelationshipType;
+  confirmParentAgeWarning?: boolean;
+};
 
 type AddRelationshipFormProps = {
   profile: {
@@ -24,6 +30,8 @@ export function AddRelationshipForm({ profile, onSaved }: AddRelationshipFormPro
     useState<SelectedProfile | null>(null);
   const [parentRole, setParentRole] = useState<ParentRole | "">("");
   const [error, setError] = useState<string | null>(null);
+  const [pendingParentAgePayload, setPendingParentAgePayload] =
+    useState<RelationshipPayload | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectorKey, setSelectorKey] = useState(0);
 
@@ -49,6 +57,24 @@ export function AddRelationshipForm({ profile, onSaved }: AddRelationshipFormPro
     setIsSubmitting(true);
 
     const payload = buildRelationshipPayload();
+    await submitRelationship(payload);
+  }
+
+  async function handleConfirmParentAgeWarning() {
+    if (!pendingParentAgePayload) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    await submitRelationship({
+      ...pendingParentAgePayload,
+      confirmParentAgeWarning: true
+    });
+  }
+
+  async function submitRelationship(payload: RelationshipPayload) {
     const response = await fetch("/api/relationships", {
       method: "POST",
       headers: {
@@ -60,13 +86,25 @@ export function AddRelationshipForm({ profile, onSaved }: AddRelationshipFormPro
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
+      if (
+        data.code === "PARENT_AGE_WARNING" &&
+        data.requiresConfirmation === true
+      ) {
+        setPendingParentAgePayload(payload);
+        setError(data.error ?? "Please confirm the parent and child dates.");
+        setIsSubmitting(false);
+        return;
+      }
+
       setError(data.error ?? "Unable to save relationship.");
+      setPendingParentAgePayload(null);
       setIsSubmitting(false);
       return;
     }
 
     setSelectedProfile(null);
     setParentRole("");
+    setPendingParentAgePayload(null);
     setSelectorKey((value) => value + 1);
     setIsSubmitting(false);
     onSaved();
@@ -85,18 +123,22 @@ export function AddRelationshipForm({ profile, onSaved }: AddRelationshipFormPro
             ? "mother"
             : parentRole;
 
+      if (resolvedParentRole !== "father" && resolvedParentRole !== "mother") {
+        throw new Error("A parent role is required for child relationships.");
+      }
+
       return {
         personId: selectedProfile.id,
         relatedPersonId: profile.id,
         relationshipType: resolvedParentRole
-      };
+      } satisfies RelationshipPayload;
     }
 
     return {
       personId: profile.id,
       relatedPersonId: selectedProfile.id,
       relationshipType
-    };
+    } satisfies RelationshipPayload;
   }
 
   return (
@@ -114,6 +156,7 @@ export function AddRelationshipForm({ profile, onSaved }: AddRelationshipFormPro
           onChange={(event) => {
             setRelationshipType(event.target.value as RelationshipType);
             setError(null);
+            setPendingParentAgePayload(null);
           }}
           className="mt-2 w-full rounded border border-line px-3 py-2 text-sm outline-none transition focus:border-moss"
         >
@@ -131,7 +174,10 @@ export function AddRelationshipForm({ profile, onSaved }: AddRelationshipFormPro
           </span>
           <select
             value={parentRole}
-            onChange={(event) => setParentRole(event.target.value as ParentRole)}
+            onChange={(event) => {
+              setParentRole(event.target.value as ParentRole);
+              setPendingParentAgePayload(null);
+            }}
             className="mt-2 w-full rounded border border-line px-3 py-2 text-sm outline-none transition focus:border-moss"
           >
             <option value="">Choose role</option>
@@ -145,7 +191,10 @@ export function AddRelationshipForm({ profile, onSaved }: AddRelationshipFormPro
         key={selectorKey}
         label={relationshipType === "child" ? "Child Profile" : "Related Profile"}
         selectedProfile={selectedProfile}
-        onSelect={setSelectedProfile}
+        onSelect={(selected) => {
+          setSelectedProfile(selected);
+          setPendingParentAgePayload(null);
+        }}
       />
 
       {selectedProfile ? (
@@ -161,6 +210,17 @@ export function AddRelationshipForm({ profile, onSaved }: AddRelationshipFormPro
       >
         {isSubmitting ? "Saving..." : "Save Relationship"}
       </button>
+
+      {pendingParentAgePayload ? (
+        <button
+          type="button"
+          onClick={handleConfirmParentAgeWarning}
+          disabled={isSubmitting}
+          className="ml-0 rounded border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:border-amber-500 disabled:cursor-not-allowed disabled:opacity-60 sm:ml-2"
+        >
+          {isSubmitting ? "Saving..." : "Confirm and save"}
+        </button>
+      ) : null}
     </form>
   );
 }
