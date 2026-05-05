@@ -71,7 +71,11 @@ export default async function ProfileDetailPage({
           <DetailItem label="Gender" value={profile.gender ?? "Not recorded"} />
           <DetailItem
             label="Status"
-            value={profile.isDeceased ? "Deceased" : "Living or unknown"}
+            value={
+              profile.isDeceased || profile.dateOfDeath
+                ? "Deceased"
+                : "No death record"
+            }
           />
           <DetailItem label="Created" value={formatDate(profile.createdAt)} />
           <DetailItem label="Updated" value={formatDate(profile.updatedAt)} />

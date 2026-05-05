@@ -81,7 +81,9 @@ export default async function ProfilesPage() {
                     {formatDate(profile.dateOfDeath)}
                   </td>
                   <td className="px-4 py-3 text-neutral-700">
-                    {profile.isDeceased ? "Deceased" : "Living or unknown"}
+                    {profile.isDeceased || profile.dateOfDeath
+                      ? "Deceased"
+                      : "No death record"}
                   </td>
                 </tr>
               ))}

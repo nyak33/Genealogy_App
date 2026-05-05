@@ -20,12 +20,21 @@ export default function RootLayout({
             <Link href="/profiles" className="text-lg font-semibold text-ink">
               Genealogy
             </Link>
-            <nav aria-label="Primary navigation">
+            <nav
+              aria-label="Primary navigation"
+              className="flex items-center gap-2"
+            >
               <Link
                 href="/profiles"
                 className="rounded border border-line px-3 py-2 text-sm font-medium text-ink transition hover:border-moss hover:text-moss"
               >
                 Profiles
+              </Link>
+              <Link
+                href="/data-quality"
+                className="rounded border border-line px-3 py-2 text-sm font-medium text-ink transition hover:border-moss hover:text-moss"
+              >
+                Data Quality
               </Link>
             </nav>
           </div>

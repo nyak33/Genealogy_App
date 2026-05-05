@@ -14,6 +14,7 @@ The goal of this MVP is to provide a clean foundation for recording family membe
 - Link father, mother, spouse, and child relationships
 - Display father, mother, spouses, and children on profile detail pages
 - Block self-links, duplicate relationships, reverse spouse duplicates, multiple fathers, and multiple mothers
+- Review data quality with duplicate groups, relationship conflicts, and missing-info reports
 - Seed safe fake local sample data
 
 ## Tech Stack
@@ -105,6 +106,16 @@ For MVP relationship logic:
 
 See [docs/DB_SCHEMA.md](docs/DB_SCHEMA.md) for schema details.
 
+## Data Quality
+
+Open `/data-quality` in the app to review:
+
+- Possible duplicate profiles grouped by `normalizedName`
+- Relationship conflicts from old or invalid rows
+- Profiles missing date of birth, gender, father, or mother
+
+The dashboard only provides safe fix tools: open profile pages, edit profile details, and remove incorrect relationship links. It does not auto-merge profiles or hard delete profile records.
+
 ## Safety Notes
 
 Do not commit `.env` or real database credentials.
@@ -119,7 +130,7 @@ Use normal migration and seed commands during development.
 
 ## Testing Notes
 
-The checked-in tests focus on validation and service logic that can run without a database. They cover name normalization, profile validation, relationship validation, search query behavior, duplicate-check query behavior, relationship conflict rules, spouse bidirectional display mapping, and child display from reverse parent lookup.
+The checked-in tests focus on validation and service logic that can run without a database. They cover name normalization, profile validation, relationship validation, search query behavior, duplicate-check query behavior, relationship conflict rules, spouse bidirectional display mapping, child display from reverse parent lookup, and data quality report helpers.
 
 Manual database QA is still recommended after migrations and seed data are applied locally:
 
@@ -132,6 +143,7 @@ Manual database QA is still recommended after migrations and seed data are appli
 - Confirm children display from reverse father/mother lookup
 - Confirm self-link, duplicate, conflicting relationship, and reverse spouse duplicate attempts fail
 - Delete a relationship and confirm profile records remain
+- Review `/data-quality` for duplicate groups, conflicts, and missing-info reports
 
 ## MVP Scope
 
