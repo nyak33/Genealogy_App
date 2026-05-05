@@ -34,12 +34,20 @@ export default async function ProfileDetailPage({
             {profile.fullName}
           </h1>
         </div>
-        <Link
-          href={`/profiles/${profile.id}/edit`}
-          className="rounded border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-moss hover:text-moss"
-        >
-          Edit Profile
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/profiles/${profile.id}/tree`}
+            className="rounded bg-moss px-4 py-2 text-sm font-semibold text-white transition hover:bg-ink"
+          >
+            View Tree
+          </Link>
+          <Link
+            href={`/profiles/${profile.id}/edit`}
+            className="rounded border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-moss hover:text-moss"
+          >
+            Edit Profile
+          </Link>
+        </div>
       </div>
 
       <section className="space-y-5 rounded border border-line bg-white p-6">

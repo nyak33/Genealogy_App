@@ -13,6 +13,7 @@ The goal of this MVP is to provide a clean foundation for recording family membe
 - Warn before creating likely duplicate profiles
 - Link father, mother, spouse, and child relationships
 - Display father, mother, spouses, and children on profile detail pages
+- View a simple profile-centered family tree
 - Block self-links, duplicate relationships, reverse spouse duplicates, multiple fathers, and multiple mothers
 - Review data quality with duplicate groups, relationship conflicts, and missing-info reports
 - Seed safe fake local sample data
@@ -141,6 +142,7 @@ Manual database QA is still recommended after migrations and seed data are appli
 - Add father, mother, spouse, and child relationships
 - Confirm spouse displays from both profiles
 - Confirm children display from reverse father/mother lookup
+- Open a profile tree view and confirm parents, spouses, and children display
 - Confirm self-link, duplicate, conflicting relationship, and reverse spouse duplicate attempts fail
 - Delete a relationship and confirm profile records remain
 - Review `/data-quality` for duplicate groups, conflicts, and missing-info reports
@@ -154,12 +156,13 @@ Included:
 - Duplicate warning
 - Relationship linking
 - Basic family relationship display
+- Simple profile-centered tree view
 - PostgreSQL-backed storage
 
 Not included yet:
 
 - Authentication
-- Advanced tree visualization
+- Advanced graph-style tree visualization
 - Media upload
 - Face tagging
 - Invites or permissions
