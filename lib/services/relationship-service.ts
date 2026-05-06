@@ -71,12 +71,19 @@ async function ensureProfilesExist(personId: string, relatedPersonId: string) {
       }
     },
     select: {
-      id: true
+      id: true,
+      isMerged: true
     }
   });
 
   if (profiles.length !== 2) {
     throw new RelationshipInputError("Both profiles must exist");
+  }
+
+  if (profiles.some((profile) => profile.isMerged)) {
+    throw new RelationshipInputError(
+      "Cannot link merged profiles. Use the primary profile instead."
+    );
   }
 }
 

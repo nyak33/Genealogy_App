@@ -32,8 +32,8 @@ const thirdProfileId = "00000000-0000-4000-8000-000000000003";
 
 function mockProfilesExist() {
   mockPrisma.profile.findMany.mockResolvedValue([
-    { id: firstProfileId },
-    { id: secondProfileId }
+    { id: firstProfileId, isMerged: false },
+    { id: secondProfileId, isMerged: false }
   ]);
 }
 
@@ -118,6 +118,58 @@ describe("relationship service", () => {
         relationshipType: "spouse"
       })
     ).rejects.toThrow("Relationship already exists");
+  });
+
+  it("rejects a merged personId", async () => {
+    mockPrisma.profile.findMany.mockResolvedValueOnce([
+      { id: firstProfileId, isMerged: true },
+      { id: secondProfileId, isMerged: false }
+    ]);
+
+    await expect(
+      createRelationship({
+        personId: firstProfileId,
+        relatedPersonId: secondProfileId,
+        relationshipType: "spouse"
+      })
+    ).rejects.toThrow(
+      "Cannot link merged profiles. Use the primary profile instead."
+    );
+    expect(mockPrisma.relationship.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("rejects a merged relatedPersonId", async () => {
+    mockPrisma.profile.findMany.mockResolvedValueOnce([
+      { id: firstProfileId, isMerged: false },
+      { id: secondProfileId, isMerged: true }
+    ]);
+
+    await expect(
+      createRelationship({
+        personId: firstProfileId,
+        relatedPersonId: secondProfileId,
+        relationshipType: "father"
+      })
+    ).rejects.toThrow(
+      "Cannot link merged profiles. Use the primary profile instead."
+    );
+  });
+
+  it("rejects a converted child relationship when the selected child is merged", async () => {
+    mockPrisma.profile.findMany.mockResolvedValueOnce([
+      { id: firstProfileId, isMerged: true },
+      { id: secondProfileId, isMerged: false }
+    ]);
+
+    await expect(
+      createRelationship({
+        personId: firstProfileId,
+        relatedPersonId: secondProfileId,
+        relationshipType: "father"
+      })
+    ).rejects.toThrow(
+      "Cannot link merged profiles. Use the primary profile instead."
+    );
   });
 
   it("blocks a parent born after the child", async () => {

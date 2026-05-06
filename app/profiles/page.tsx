@@ -23,6 +23,9 @@ export default async function ProfilesPage() {
             Manage family member records before adding search, duplicate
             warnings, and relationship links in later milestones.
           </p>
+          <p className="mt-1 text-xs text-neutral-600">
+            Merged profiles are hidden from this list.
+          </p>
         </div>
         <Link
           href="/profiles/new"

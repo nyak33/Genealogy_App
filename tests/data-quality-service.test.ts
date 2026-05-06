@@ -22,6 +22,7 @@ function profile(
     dateOfBirth: null,
     dateOfDeath: null,
     gender: null,
+    isMerged: false,
     ...overrides
   };
 }
@@ -55,6 +56,18 @@ describe("data quality service helpers", () => {
     expect(duplicateGroups).toHaveLength(1);
     expect(duplicateGroups[0].normalizedName).toBe("amin rahman");
     expect(duplicateGroups[0].profiles).toHaveLength(2);
+  });
+
+  it("excludes merged profiles from duplicate groups", () => {
+    const duplicateGroups = getDuplicateGroupsFromProfiles([
+      profile("profile-1", "Amin Rahman", { normalizedName: "amin rahman" }),
+      profile("profile-2", "Amin Rahman Copy", {
+        normalizedName: "amin rahman",
+        isMerged: true
+      })
+    ]);
+
+    expect(duplicateGroups).toEqual([]);
   });
 
   it("detects same pair linked under multiple relationship types", () => {
@@ -205,5 +218,18 @@ describe("data quality service helpers", () => {
         missingFields: ["date of birth", "gender", "father", "mother"]
       }
     ]);
+  });
+
+  it("excludes merged profiles from missing info reports", () => {
+    const mergedProfile = profile("profile-1", "Merged Person", {
+      isMerged: true
+    });
+
+    const missingInfoProfiles = getMissingInfoProfilesFromData(
+      [mergedProfile],
+      []
+    );
+
+    expect(missingInfoProfiles).toEqual([]);
   });
 });

@@ -24,6 +24,15 @@ const profileSelect = {
   gender: true,
   notes: true,
   isDeceased: true,
+  isMerged: true,
+  mergedIntoProfileId: true,
+  mergedAt: true,
+  mergedIntoProfile: {
+    select: {
+      id: true,
+      fullName: true
+    }
+  },
   createdAt: true,
   updatedAt: true
 } satisfies Prisma.ProfileSelect;
@@ -67,6 +76,9 @@ function ensureDateOrder(dateOfBirth: Date | null, dateOfDeath: Date | null) {
 
 export async function listProfiles() {
   return prisma.profile.findMany({
+    where: {
+      isMerged: false
+    },
     orderBy: {
       createdAt: "desc"
     },
@@ -107,6 +119,7 @@ export async function searchProfiles(query: string) {
 
   return prisma.profile.findMany({
     where: {
+      isMerged: false,
       OR: [
         {
           fullName: {
@@ -162,6 +175,7 @@ export async function findPossibleDuplicateProfiles(input: DuplicateCheckInput) 
 
   return prisma.profile.findMany({
     where: {
+      isMerged: false,
       OR: duplicateChecks
     },
     orderBy: {

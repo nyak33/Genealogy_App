@@ -7,7 +7,8 @@ const dataQualityProfileSelect = {
   normalizedName: true,
   dateOfBirth: true,
   dateOfDeath: true,
-  gender: true
+  gender: true,
+  isMerged: true
 } satisfies Prisma.ProfileSelect;
 
 const dataQualityRelationshipSelect = {
@@ -82,6 +83,7 @@ export async function getDataQualityReport(): Promise<DataQualityReport> {
 export async function findPossibleDuplicateGroups() {
   const profiles = await prisma.profile.findMany({
     where: {
+      isMerged: false,
       normalizedName: {
         not: null
       }
@@ -109,6 +111,9 @@ export async function findRelationshipConflicts() {
 export async function findMissingInfoProfiles() {
   const [profiles, parentRelationships] = await Promise.all([
     prisma.profile.findMany({
+      where: {
+        isMerged: false
+      },
       orderBy: {
         fullName: "asc"
       },
@@ -138,6 +143,10 @@ export function getDuplicateGroupsFromProfiles(
   const groups = new Map<string, DataQualityProfile[]>();
 
   for (const profile of profiles) {
+    if (profile.isMerged) {
+      continue;
+    }
+
     const normalizedName = profile.normalizedName?.trim();
 
     if (!normalizedName) {
@@ -294,6 +303,7 @@ export function getMissingInfoProfilesFromData(
   );
 
   return profiles
+    .filter((profile) => !profile.isMerged)
     .map((profile) => {
       const missingFields = [
         profile.dateOfBirth ? null : "date of birth",

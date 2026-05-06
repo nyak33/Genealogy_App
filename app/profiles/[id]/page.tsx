@@ -22,6 +22,7 @@ export default async function ProfileDetailPage({
   const { id } = await params;
   const profile = await loadProfile(id);
   const relationships = await getProfileRelationships(id);
+  const isMerged = profile.isMerged;
 
   return (
     <section className="space-y-6">
@@ -35,20 +36,47 @@ export default async function ProfileDetailPage({
           </h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link
-            href={`/profiles/${profile.id}/tree`}
-            className="rounded bg-moss px-4 py-2 text-sm font-semibold text-white transition hover:bg-ink"
-          >
-            View Tree
-          </Link>
-          <Link
-            href={`/profiles/${profile.id}/edit`}
-            className="rounded border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-moss hover:text-moss"
-          >
-            Edit Profile
-          </Link>
+          {!isMerged ? (
+            <>
+              <Link
+                href={`/profiles/${profile.id}/tree`}
+                className="rounded bg-moss px-4 py-2 text-sm font-semibold text-white transition hover:bg-ink"
+              >
+                View Tree
+              </Link>
+              <Link
+                href={`/profiles/${profile.id}/edit`}
+                className="rounded border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-moss hover:text-moss"
+              >
+                Edit Profile
+              </Link>
+            </>
+          ) : null}
         </div>
       </div>
+
+      {isMerged ? (
+        <section className="rounded border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          {profile.mergedIntoProfile ? (
+            <p>
+              This profile was merged into{" "}
+              <Link
+                href={`/profiles/${profile.mergedIntoProfile.id}`}
+                className="font-semibold text-moss hover:text-ink"
+              >
+                {profile.mergedIntoProfile.fullName}
+              </Link>
+              .
+            </p>
+          ) : (
+            <p>This profile was merged into another profile.</p>
+          )}
+          <p className="mt-1">
+            Editing and relationship management are disabled for merged
+            profiles.
+          </p>
+        </section>
+      ) : null}
 
       <section className="space-y-5 rounded border border-line bg-white p-6">
         <div>
@@ -97,13 +125,15 @@ export default async function ProfileDetailPage({
         </div>
       </section>
 
-      <RelationshipManager
-        profile={{
-          id: profile.id,
-          gender: profile.gender
-        }}
-        relationships={relationships}
-      />
+      {!isMerged ? (
+        <RelationshipManager
+          profile={{
+            id: profile.id,
+            gender: profile.gender
+          }}
+          relationships={relationships}
+        />
+      ) : null}
     </section>
   );
 }
