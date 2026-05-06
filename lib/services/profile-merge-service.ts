@@ -52,6 +52,8 @@ type MergeFieldName =
   | "notes"
   | "isDeceased";
 
+type MergeDatabaseClient = Pick<Prisma.TransactionClient, "profile" | "relationship">;
+
 type MergeFieldPreview = {
   field: MergeFieldName;
   primaryValue: MergeProfile[MergeFieldName];
@@ -64,7 +66,7 @@ export type MergeRelationshipReplacement = {
   relationshipType: RelationshipType;
 };
 
-type MergeRelationshipPreview = {
+export type MergeRelationshipPreview = {
   relationshipId: string;
   original: MergeRelationshipReplacement;
   replacement: MergeRelationshipReplacement;
@@ -100,6 +102,17 @@ export type ProfileMergePreview = {
   warnings: MergeWarning[];
 };
 
+export type ProfileMergeResult = {
+  primaryProfile: MergeProfile;
+  duplicateProfile: MergeProfile;
+  fieldsCopied: MergeFieldPreview[];
+  fieldConflicts: MergeFieldPreview[];
+  relationshipsMoved: MergeRelationshipPreview[];
+  relationshipsDeletedAsRedundant: MergeRelationshipPreview[];
+  relationshipsSkipped: MergeRelationshipSkip[];
+  warnings: MergeWarning[];
+};
+
 const mergeFieldNames: MergeFieldName[] = [
   "fullName",
   "dateOfBirth",
@@ -120,13 +133,88 @@ export async function evaluateProfileMerge(
   primaryId: string,
   duplicateId: string
 ): Promise<ProfileMergePreview> {
+  return evaluateProfileMergeWithClient(prisma, primaryId, duplicateId);
+}
+
+export async function mergeProfiles(
+  primaryId: string,
+  duplicateId: string
+): Promise<ProfileMergeResult> {
+  return prisma.$transaction(async (tx) => {
+    const preview = await evaluateProfileMergeWithClient(
+      tx,
+      primaryId,
+      duplicateId
+    );
+    const primaryUpdateData = getPrimaryProfileUpdateData(preview);
+    const primaryProfile = preview.fieldsToCopy.length
+      ? await tx.profile.update({
+          where: {
+            id: primaryId
+          },
+          data: primaryUpdateData,
+          select: mergeProfileSelect
+        })
+      : preview.primaryProfile;
+
+    for (const relationship of preview.relationshipsToMove) {
+      await tx.relationship.update({
+        where: {
+          id: relationship.relationshipId
+        },
+        data: {
+          personId: relationship.replacement.personId,
+          relatedPersonId: relationship.replacement.relatedPersonId
+        }
+      });
+    }
+
+    for (const relationship of preview.relationshipsToDeleteAsRedundant) {
+      await tx.relationship.delete({
+        where: {
+          id: relationship.relationshipId
+        }
+      });
+    }
+
+    const duplicateProfile = await tx.profile.update({
+      where: {
+        id: duplicateId
+      },
+      data: {
+        isMerged: true,
+        mergedIntoProfileId: primaryId,
+        mergedAt: new Date()
+      },
+      select: mergeProfileSelect
+    });
+
+    return {
+      primaryProfile,
+      duplicateProfile,
+      fieldsCopied: preview.fieldsToCopy,
+      fieldConflicts: preview.fieldConflicts,
+      relationshipsMoved: preview.relationshipsToMove,
+      relationshipsDeletedAsRedundant:
+        preview.relationshipsToDeleteAsRedundant,
+      relationshipsSkipped: preview.relationshipsToSkip,
+      warnings: preview.warnings
+    };
+  });
+}
+
+async function evaluateProfileMergeWithClient(
+  db: MergeDatabaseClient,
+  primaryId: string,
+  duplicateId: string
+): Promise<ProfileMergePreview> {
   if (primaryId === duplicateId) {
     throw new ProfileMergeInputError(
       "Primary and duplicate profiles must be different."
     );
   }
 
-  const profiles = await prisma.profile.findMany({
+  const profiles = await db.profile.findMany({
     where: {
       id: {
         in: [primaryId, duplicateId]
@@ -157,7 +245,7 @@ export async function evaluateProfileMerge(
   }
 
   const fieldPreview = evaluateMergeFields(primaryProfile, duplicateProfile);
-  const duplicateRelationships = await prisma.relationship.findMany({
+  const duplicateRelationships = await db.relationship.findMany({
     where: {
       OR: [{ personId: duplicateId }, { relatedPersonId: duplicateId }]
     },
@@ -183,7 +271,7 @@ export async function evaluateProfileMerge(
     )
   );
   const existingRelationships = affectedProfileIds.length
-    ? await prisma.relationship.findMany({
+    ? await db.relationship.findMany({
         where: {
           OR: [
             {
@@ -217,6 +305,36 @@ export async function evaluateProfileMerge(
     ...fieldPreview,
     ...relationshipPreview
   };
+}
+
+function getPrimaryProfileUpdateData(preview: ProfileMergePreview) {
+  const data: Prisma.ProfileUpdateInput = {};
+
+  for (const fieldPreview of preview.fieldsToCopy) {
+    switch (fieldPreview.field) {
+      case "fullName":
+        data.fullName = fieldPreview.duplicateValue as string;
+        data.normalizedName = preview.duplicateProfile.normalizedName;
+        break;
+      case "dateOfBirth":
+        data.dateOfBirth = fieldPreview.duplicateValue as Date;
+        break;
+      case "dateOfDeath":
+        data.dateOfDeath = fieldPreview.duplicateValue as Date;
+        break;
+      case "gender":
+        data.gender = fieldPreview.duplicateValue as string;
+        break;
+      case "notes":
+        data.notes = fieldPreview.duplicateValue as string;
+        break;
+      case "isDeceased":
+        data.isDeceased = fieldPreview.duplicateValue as boolean;
+        break;
+    }
+  }
+
+  return data;
 }
 
 function evaluateMergeFields(
