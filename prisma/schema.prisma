@@ -24,15 +24,22 @@ model Profile {
   gender         String?
   notes          String?
   isDeceased     Boolean  @default(false) @map("is_deceased")
+  isMerged       Boolean  @default(false) @map("is_merged")
+  mergedIntoProfileId String? @map("merged_into_profile_id") @db.Uuid
+  mergedAt       DateTime? @map("merged_at") @db.Timestamptz(6)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   relationshipsFrom Relationship[] @relation("RelationshipFrom")
   relationshipsTo   Relationship[] @relation("RelationshipTo")
+  mergedIntoProfile Profile? @relation("ProfileMerge", fields: [mergedIntoProfileId], references: [id], onDelete: Restrict)
+  mergedProfiles    Profile[] @relation("ProfileMerge")
 
   @@index([fullName], map: "idx_profiles_full_name")
   @@index([normalizedName], map: "idx_profiles_normalized_name")
   @@index([dateOfBirth], map: "idx_profiles_date_of_birth")
+  @@index([isMerged], map: "idx_profiles_is_merged")
+  @@index([mergedIntoProfileId], map: "idx_profiles_merged_into_profile_id")
   @@map("profiles")
 }
 

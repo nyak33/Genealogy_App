@@ -159,6 +159,9 @@ CREATE TABLE profiles (
     notes TEXT,
 
     is_deceased BOOLEAN DEFAULT FALSE,
+    is_merged BOOLEAN DEFAULT FALSE,
+    merged_into_profile_id UUID REFERENCES profiles(id),
+    merged_at TIMESTAMPTZ,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -179,6 +182,9 @@ CREATE TABLE profiles (
 | gender | TEXT | No | Optional gender value |
 | notes | TEXT | No | General notes about the person |
 | is_deceased | BOOLEAN | No | Indicates whether the person is deceased |
+| is_merged | BOOLEAN | No | Indicates this profile has been merged into another profile |
+| merged_into_profile_id | UUID | No | Primary profile this duplicate profile was merged into |
+| merged_at | TIMESTAMPTZ | No | Timestamp when this profile was marked as merged |
 | created_at | TIMESTAMPTZ | Yes | Record creation timestamp |
 | updated_at | TIMESTAMPTZ | Yes | Last update timestamp |
 
@@ -262,7 +268,49 @@ USING gin (full_name gin_trgm_ops);
 
 ---
 
-## 5.7 Validation Rules
+## 5.7 Merge Fields
+
+Soft merge support keeps duplicate profiles in the database instead of hard deleting them.
+
+When a duplicate profile is merged into a primary profile:
+
+```text
+is_merged = true
+merged_into_profile_id = primary profile ID
+merged_at = merge timestamp
+```
+
+The duplicate record remains available for audit and direct lookup, while future application logic can hide merged profiles from normal lists and search results.
+
+Database-level merge checks:
+
+```sql
+CHECK (merged_into_profile_id IS NULL OR merged_into_profile_id <> id)
+```
+
+```sql
+CHECK (
+    is_merged = false
+    OR (
+        merged_into_profile_id IS NOT NULL
+        AND merged_at IS NOT NULL
+    )
+)
+```
+
+Recommended merge indexes:
+
+```sql
+CREATE INDEX idx_profiles_is_merged
+ON profiles (is_merged);
+
+CREATE INDEX idx_profiles_merged_into_profile_id
+ON profiles (merged_into_profile_id);
+```
+
+---
+
+## 5.8 Validation Rules
 
 Application-level validation:
 
