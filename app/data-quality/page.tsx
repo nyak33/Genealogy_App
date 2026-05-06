@@ -60,6 +60,12 @@ export default async function DataQualityPage() {
                 <h3 className="text-sm font-semibold text-ink">
                   {group.normalizedName}
                 </h3>
+                <Link
+                  href="/profiles/merge"
+                  className="mt-2 inline-block text-sm font-medium text-moss hover:text-ink"
+                >
+                  Review merge
+                </Link>
                 <ul className="mt-3 space-y-2">
                   {group.profiles.map((profile) => (
                     <li
