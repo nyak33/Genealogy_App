@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RelationshipManager } from "@/components/relationships/relationship-manager";
+import { findCoParentSpouseSuggestions } from "@/lib/services/co-parent-suggestion-service";
 import {
   getProfileById,
   ProfileNotFoundError
@@ -23,6 +24,9 @@ export default async function ProfileDetailPage({
   const profile = await loadProfile(id);
   const relationships = await getProfileRelationships(id);
   const isMerged = profile.isMerged;
+  const coParentSuggestions = isMerged
+    ? []
+    : await findCoParentSpouseSuggestions(id);
 
   return (
     <section className="space-y-6">
@@ -132,6 +136,7 @@ export default async function ProfileDetailPage({
             gender: profile.gender
           }}
           relationships={relationships}
+          coParentSuggestions={coParentSuggestions}
         />
       ) : null}
     </section>

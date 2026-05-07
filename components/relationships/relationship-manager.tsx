@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AddRelationshipForm } from "@/components/relationships/add-relationship-form";
+import { CoParentSuggestions } from "@/components/relationships/co-parent-suggestions";
+import type { CoParentSuggestion } from "@/lib/services/co-parent-suggestion-service";
 import type {
   ProfileRelationships,
   RelationshipProfileLink
@@ -16,11 +18,13 @@ type RelationshipManagerProps = {
     gender: string | null;
   };
   relationships: ProfileRelationships;
+  coParentSuggestions: CoParentSuggestion[];
 };
 
 export function RelationshipManager({
   profile,
-  relationships
+  relationships,
+  coParentSuggestions
 }: RelationshipManagerProps) {
   const router = useRouter();
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -86,6 +90,8 @@ export function RelationshipManager({
           />
         </div>
       </section>
+
+      <CoParentSuggestions suggestions={coParentSuggestions} />
 
       <section className="space-y-5 rounded border border-line bg-white p-6">
         <div>
