@@ -8,9 +8,12 @@ type FamilyTreeViewProps = {
 
 export function FamilyTreeView({ tree }: FamilyTreeViewProps) {
   return (
-    <div className="space-y-6">
-      <FamilyTreeSection title="Parents">
-        <div className="grid gap-4 md:grid-cols-2">
+    <div className="mx-auto max-w-6xl space-y-8 print:max-w-none print:space-y-5">
+      <FamilyTreeSection
+        title="Parents"
+        description="Biological parent links recorded for the current profile."
+      >
+        <div className="mx-auto grid max-w-4xl gap-4 md:grid-cols-2">
           <FamilyTreePersonCard
             label="Father"
             person={tree.father}
@@ -24,23 +27,32 @@ export function FamilyTreeView({ tree }: FamilyTreeViewProps) {
         </div>
       </FamilyTreeSection>
 
+      <AccurateConnector label="Parents connect to current profile" />
+
       <FamilyTreeSection title="Current Profile">
-        <FamilyTreePersonCard
-          label="Current Profile"
-          person={tree.profile}
-          emptyMessage="Current profile could not be loaded."
-          highlight
-        />
+        <div className="mx-auto max-w-md">
+          <FamilyTreePersonCard
+            label="Current Profile"
+            person={tree.profile}
+            emptyMessage="Current profile could not be loaded."
+            highlight
+          />
+        </div>
       </FamilyTreeSection>
 
-      <FamilyTreeSection title="Spouse / Spouses">
+      <FamilyTreeSection
+        title="Spouse / Spouses"
+        description="Spouse links are shown separately and are not treated as child parent links unless recorded as father or mother."
+      >
         {tree.spouses.length === 0 ? (
-          <FamilyTreePersonCard
-            label="Spouse / Spouses"
-            emptyMessage="No spouse linked yet."
-          />
+          <div className="mx-auto max-w-md">
+            <FamilyTreePersonCard
+              label="Spouse / Spouses"
+              emptyMessage="No spouse linked yet."
+            />
+          </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mx-auto grid max-w-4xl gap-4 md:grid-cols-2 xl:grid-cols-3">
             {tree.spouses.map((spouse) => (
               <FamilyTreePersonCard
                 key={spouse.id}
@@ -53,12 +65,19 @@ export function FamilyTreeView({ tree }: FamilyTreeViewProps) {
         )}
       </FamilyTreeSection>
 
-      <FamilyTreeSection title="Children">
+      <AccurateConnector label="Current profile connects to children" />
+
+      <FamilyTreeSection
+        title="Children"
+        description="Each child card shows that child's linked biological father and mother."
+      >
         {tree.children.length === 0 ? (
-          <FamilyTreePersonCard
-            label="Children"
-            emptyMessage="No children linked yet."
-          />
+          <div className="mx-auto max-w-md">
+            <FamilyTreePersonCard
+              label="Children"
+              emptyMessage="No children linked yet."
+            />
+          </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {tree.children.map((child) => (
@@ -76,6 +95,17 @@ export function FamilyTreeView({ tree }: FamilyTreeViewProps) {
           </div>
         )}
       </FamilyTreeSection>
+    </div>
+  );
+}
+
+function AccurateConnector({ label }: { label: string }) {
+  return (
+    <div
+      aria-label={label}
+      className="hidden h-8 items-center justify-center md:flex print:hidden"
+    >
+      <div className="h-full w-px bg-line" />
     </div>
   );
 }
