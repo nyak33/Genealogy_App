@@ -133,6 +133,8 @@ export default async function ProfileDetailPage({
         <RelationshipManager
           profile={{
             id: profile.id,
+            fullName: profile.fullName,
+            dateOfBirth: profile.dateOfBirth,
             gender: profile.gender
           }}
           relationships={relationships}

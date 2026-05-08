@@ -467,7 +467,7 @@ function evaluateMergeRelationships({
       warnings.push({
         code: "PARENT_AGE_WARNING",
         message:
-          "This parent appears to be less than 12 years older than the child. Please confirm the dates are correct.",
+          "This parent appears unusually young for a biological parent. Please confirm the dates are correct.",
         relationshipId: relationship.id
       });
     }

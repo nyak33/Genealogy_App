@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AddRelationshipForm } from "@/components/relationships/add-relationship-form";
 import { CoParentSuggestions } from "@/components/relationships/co-parent-suggestions";
+import { QuickAddRelativeForm } from "@/components/relationships/quick-add-relative-form";
 import type { CoParentSuggestion } from "@/lib/services/co-parent-suggestion-service";
 import type {
   ProfileRelationships,
@@ -12,9 +13,13 @@ import type {
 } from "@/lib/services/relationship-service";
 import { formatDate } from "@/lib/utils/format-date";
 
+type QuickAddRelationshipType = "father" | "mother" | "spouse" | "child";
+
 type RelationshipManagerProps = {
   profile: {
     id: string;
+    fullName: string;
+    dateOfBirth: Date | string | null;
     gender: string | null;
   };
   relationships: ProfileRelationships;
@@ -29,6 +34,8 @@ export function RelationshipManager({
   const router = useRouter();
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [activeQuickAddType, setActiveQuickAddType] =
+    useState<QuickAddRelationshipType | null>(null);
 
   async function handleDelete(relationshipId: string) {
     setDeleteError(null);
@@ -66,6 +73,16 @@ export function RelationshipManager({
             links={relationships.father}
             deletingId={deletingId}
             onDelete={handleDelete}
+            quickAddLabel={
+              relationships.father.length === 0
+                ? "+ Add Father to this profile"
+                : undefined
+            }
+            onQuickAdd={
+              relationships.father.length === 0
+                ? () => setActiveQuickAddType("father")
+                : undefined
+            }
           />
           <RelationshipGroup
             title="Mother"
@@ -73,6 +90,16 @@ export function RelationshipManager({
             links={relationships.mother}
             deletingId={deletingId}
             onDelete={handleDelete}
+            quickAddLabel={
+              relationships.mother.length === 0
+                ? "+ Add Mother to this profile"
+                : undefined
+            }
+            onQuickAdd={
+              relationships.mother.length === 0
+                ? () => setActiveQuickAddType("mother")
+                : undefined
+            }
           />
           <RelationshipGroup
             title="Spouse / Spouses"
@@ -80,6 +107,8 @@ export function RelationshipManager({
             links={relationships.spouses}
             deletingId={deletingId}
             onDelete={handleDelete}
+            quickAddLabel="+ Add Spouse"
+            onQuickAdd={() => setActiveQuickAddType("spouse")}
           />
           <RelationshipGroup
             title="Children"
@@ -87,8 +116,22 @@ export function RelationshipManager({
             links={relationships.children}
             deletingId={deletingId}
             onDelete={handleDelete}
+            quickAddLabel="+ Add Child"
+            onQuickAdd={() => setActiveQuickAddType("child")}
           />
         </div>
+
+        {activeQuickAddType ? (
+          <QuickAddRelativeForm
+            currentProfile={profile}
+            relationshipType={activeQuickAddType}
+            onCancel={() => setActiveQuickAddType(null)}
+            onSaved={() => {
+              setActiveQuickAddType(null);
+              router.refresh();
+            }}
+          />
+        ) : null}
       </section>
 
       <CoParentSuggestions suggestions={coParentSuggestions} />
@@ -126,17 +169,32 @@ function RelationshipGroup({
   emptyMessage,
   links,
   deletingId,
-  onDelete
+  onDelete,
+  quickAddLabel,
+  onQuickAdd
 }: {
   title: string;
   emptyMessage: string;
   links: RelationshipProfileLink[];
   deletingId: string | null;
   onDelete: (relationshipId: string) => Promise<void>;
+  quickAddLabel?: string;
+  onQuickAdd?: () => void;
 }) {
   return (
     <div className="rounded border border-line bg-paper p-4">
-      <h3 className="text-sm font-semibold text-ink">{title}</h3>
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-sm font-semibold text-ink">{title}</h3>
+        {quickAddLabel && onQuickAdd ? (
+          <button
+            type="button"
+            onClick={onQuickAdd}
+            className="rounded border border-line bg-white px-2 py-1 text-xs font-semibold text-moss transition hover:border-moss hover:text-ink"
+          >
+            {quickAddLabel}
+          </button>
+        ) : null}
+      </div>
       {links.length === 0 ? (
         <p className="mt-3 text-sm text-neutral-600">{emptyMessage}</p>
       ) : (

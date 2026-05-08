@@ -52,6 +52,8 @@ export type ProfileSearchRecord = Prisma.ProfileGetPayload<{
   select: typeof profileSearchSelect;
 }>;
 
+type ProfileDbClient = Pick<typeof prisma, "profile">;
+
 function parseOptionalDate(value: string | null | undefined): Date | null {
   if (!value) {
     return null;
@@ -143,7 +145,10 @@ export async function searchProfiles(query: string) {
   });
 }
 
-export async function findPossibleDuplicateProfiles(input: DuplicateCheckInput) {
+export async function findPossibleDuplicateProfiles(
+  input: DuplicateCheckInput,
+  client: ProfileDbClient = prisma
+) {
   const normalizedQuery = normalizeName(input.fullName);
   const dateOfBirth = parseOptionalDate(input.dateOfBirth);
   const dateOfDeath = parseOptionalDate(input.dateOfDeath);
@@ -173,7 +178,7 @@ export async function findPossibleDuplicateProfiles(input: DuplicateCheckInput) 
     duplicateChecks.push({ dateOfDeath });
   }
 
-  return prisma.profile.findMany({
+  return client.profile.findMany({
     where: {
       isMerged: false,
       OR: duplicateChecks
@@ -186,13 +191,16 @@ export async function findPossibleDuplicateProfiles(input: DuplicateCheckInput) 
   });
 }
 
-export async function createProfile(input: CreateProfileInput) {
+export async function createProfile(
+  input: CreateProfileInput,
+  client: ProfileDbClient = prisma
+) {
   const dateOfBirth = parseOptionalDate(input.dateOfBirth);
   const dateOfDeath = parseOptionalDate(input.dateOfDeath);
 
   ensureDateOrder(dateOfBirth, dateOfDeath);
 
-  return prisma.profile.create({
+  return client.profile.create({
     data: {
       fullName: input.fullName,
       normalizedName: normalizeName(input.fullName),

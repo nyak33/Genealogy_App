@@ -36,6 +36,9 @@ const relationshipSelect = {
   createdAt: true
 } satisfies Prisma.RelationshipSelect;
 
+const FATHER_BIRTH_WINDOW_DAYS = 300;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
 export type RelationshipProfileLink = {
   relationshipId: string;
   relationshipType: RelationshipType;
@@ -63,8 +66,14 @@ export type ProfileTreeRelationships = Omit<ProfileRelationships, "children"> & 
   children: TreeChildProfileLink[];
 };
 
-async function ensureProfilesExist(personId: string, relatedPersonId: string) {
-  const profiles = await prisma.profile.findMany({
+type RelationshipDbClient = Pick<typeof prisma, "profile" | "relationship">;
+
+async function ensureProfilesExist(
+  personId: string,
+  relatedPersonId: string,
+  client: RelationshipDbClient
+) {
+  const profiles = await client.profile.findMany({
     where: {
       id: {
         in: [personId, relatedPersonId]
@@ -87,8 +96,11 @@ async function ensureProfilesExist(personId: string, relatedPersonId: string) {
   }
 }
 
-async function ensureNoDuplicateRelationship(input: CreateRelationshipInput) {
-  const existingDirectRelationship = await prisma.relationship.findFirst({
+async function ensureNoDuplicateRelationship(
+  input: CreateRelationshipInput,
+  client: RelationshipDbClient
+) {
+  const existingDirectRelationship = await client.relationship.findFirst({
     where: {
       OR: [
         {
@@ -117,7 +129,10 @@ async function ensureNoDuplicateRelationship(input: CreateRelationshipInput) {
   }
 }
 
-async function ensureSingleParentRelationship(input: CreateRelationshipInput) {
+async function ensureSingleParentRelationship(
+  input: CreateRelationshipInput,
+  client: RelationshipDbClient
+) {
   if (
     input.relationshipType !== RelationshipType.father &&
     input.relationshipType !== RelationshipType.mother
@@ -125,7 +140,7 @@ async function ensureSingleParentRelationship(input: CreateRelationshipInput) {
     return;
   }
 
-  const existingParent = await prisma.relationship.findFirst({
+  const existingParent = await client.relationship.findFirst({
     where: {
       personId: input.personId,
       relationshipType: input.relationshipType
@@ -144,7 +159,10 @@ async function ensureSingleParentRelationship(input: CreateRelationshipInput) {
   }
 }
 
-async function ensureParentAgeIsReasonable(input: CreateRelationshipInput) {
+async function ensureParentAgeIsReasonable(
+  input: CreateRelationshipInput,
+  client: RelationshipDbClient
+) {
   if (
     input.relationshipType !== RelationshipType.father &&
     input.relationshipType !== RelationshipType.mother
@@ -152,7 +170,7 @@ async function ensureParentAgeIsReasonable(input: CreateRelationshipInput) {
     return;
   }
 
-  const profiles = await prisma.profile.findMany({
+  const profiles = await client.profile.findMany({
     where: {
       id: {
         in: [input.personId, input.relatedPersonId]
@@ -160,7 +178,8 @@ async function ensureParentAgeIsReasonable(input: CreateRelationshipInput) {
     },
     select: {
       id: true,
-      dateOfBirth: true
+      dateOfBirth: true,
+      dateOfDeath: true
     }
   });
 
@@ -169,20 +188,59 @@ async function ensureParentAgeIsReasonable(input: CreateRelationshipInput) {
     (profile) => profile.id === input.relatedPersonId
   );
 
-  if (!child?.dateOfBirth || !parent?.dateOfBirth) {
+  if (!child || !parent) {
+    return;
+  }
+
+  if (!child.dateOfBirth || !parent.dateOfBirth) {
+    ensureParentDeathDateCanFitRelationship(input, child, parent);
     return;
   }
 
   if (parent.dateOfBirth >= child.dateOfBirth) {
-    throw new RelationshipInputError("Parent must be older than child.");
+    throw new RelationshipInputError("Parent must be born before the child.");
   }
+
+  ensureParentDeathDateCanFitRelationship(input, child, parent);
 
   if (
     !input.confirmParentAgeWarning &&
     addCalendarYears(parent.dateOfBirth, 12) > child.dateOfBirth
   ) {
     throw new RelationshipParentAgeWarningError(
-      "This parent appears to be less than 12 years older than the child. Please confirm the dates are correct."
+      "This parent appears unusually young for a biological parent. Please confirm the dates are correct."
+    );
+  }
+}
+
+function ensureParentDeathDateCanFitRelationship(
+  input: CreateRelationshipInput,
+  child: { dateOfBirth: Date | null },
+  parent: { dateOfDeath: Date | null }
+) {
+  if (!child.dateOfBirth || !parent.dateOfDeath) {
+    return;
+  }
+
+  if (input.relationshipType === RelationshipType.father) {
+    const earliestAllowedFatherDeath = addDays(
+      child.dateOfBirth,
+      -FATHER_BIRTH_WINDOW_DAYS
+    );
+
+    if (parent.dateOfDeath < earliestAllowedFatherDeath) {
+      throw new RelationshipInputError(
+        "Father death date is too early to be the biological father of this child."
+      );
+    }
+  }
+
+  if (
+    input.relationshipType === RelationshipType.mother &&
+    parent.dateOfDeath < child.dateOfBirth
+  ) {
+    throw new RelationshipInputError(
+      "Mother death date cannot be before the child birth date."
     );
   }
 }
@@ -191,6 +249,10 @@ function addCalendarYears(date: Date, years: number) {
   const result = new Date(date);
   result.setFullYear(result.getFullYear() + years);
   return result;
+}
+
+function addDays(date: Date, days: number) {
+  return new Date(date.getTime() + days * MILLISECONDS_PER_DAY);
 }
 
 export async function getProfileRelationships(profileId: string) {
@@ -298,18 +360,21 @@ export async function getProfileTreeRelationships(profileId: string) {
   } satisfies ProfileTreeRelationships;
 }
 
-export async function createRelationship(input: CreateRelationshipInput) {
+export async function createRelationship(
+  input: CreateRelationshipInput,
+  client: RelationshipDbClient = prisma
+) {
   if (input.personId === input.relatedPersonId) {
     throw new RelationshipInputError("A profile cannot be related to itself");
   }
 
-  await ensureProfilesExist(input.personId, input.relatedPersonId);
-  await ensureNoDuplicateRelationship(input);
-  await ensureSingleParentRelationship(input);
-  await ensureParentAgeIsReasonable(input);
+  await ensureProfilesExist(input.personId, input.relatedPersonId, client);
+  await ensureNoDuplicateRelationship(input, client);
+  await ensureSingleParentRelationship(input, client);
+  await ensureParentAgeIsReasonable(input, client);
 
   try {
-    return await prisma.relationship.create({
+    return await client.relationship.create({
       data: {
         personId: input.personId,
         relatedPersonId: input.relatedPersonId,

@@ -186,6 +186,50 @@ describe("data quality service helpers", () => {
     );
   });
 
+  it("detects father death date conflicts", () => {
+    const child = profile("profile-1", "Muhamad Syaqir", {
+      dateOfBirth: new Date("1997-12-20")
+    });
+    const father = profile("profile-2", "Ab Basaar", {
+      dateOfDeath: new Date("1960-12-20")
+    });
+    const conflicts = getRelationshipConflictsFromRows([
+      relationship("relationship-1", child, father, RelationshipType.father)
+    ]);
+
+    expect(conflicts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "parent_death_date_conflict",
+          description:
+            "Ab Basaar has a death date that conflicts with being the biological father of Muhamad Syaqir."
+        })
+      ])
+    );
+  });
+
+  it("detects mother death date conflicts", () => {
+    const child = profile("profile-1", "Muhamad Syaqir", {
+      dateOfBirth: new Date("1997-12-20")
+    });
+    const mother = profile("profile-2", "Nora Aziz", {
+      dateOfDeath: new Date("1997-12-19")
+    });
+    const conflicts = getRelationshipConflictsFromRows([
+      relationship("relationship-1", child, mother, RelationshipType.mother)
+    ]);
+
+    expect(conflicts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "parent_death_date_conflict",
+          description:
+            "Nora Aziz has a death date that conflicts with being the biological mother of Muhamad Syaqir."
+        })
+      ])
+    );
+  });
+
   it("reports missing date of birth, gender, father, and mother", () => {
     const completeProfile = profile("profile-1", "Complete Person", {
       dateOfBirth: birthDate,

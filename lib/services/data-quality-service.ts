@@ -43,7 +43,8 @@ export type RelationshipConflictType =
   | "multiple_mothers"
   | "reverse_spouse_duplicate"
   | "self_link"
-  | "direct_child_link";
+  | "direct_child_link"
+  | "parent_death_date_conflict";
 
 export type RelationshipConflict = {
   id: string;
@@ -64,6 +65,9 @@ export type DataQualityReport = {
   relationshipConflicts: RelationshipConflict[];
   missingInfoProfiles: MissingInfoProfile[];
 };
+
+const FATHER_BIRTH_WINDOW_DAYS = 300;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export async function getDataQualityReport(): Promise<DataQualityReport> {
   const [duplicateGroups, relationshipConflicts, missingInfoProfiles] =
@@ -225,6 +229,20 @@ export function getRelationshipConflictsFromRows(
         relationships: [relationship]
       });
     }
+
+    const parentDeathDateConflict =
+      getParentDeathDateConflictDescription(relationship);
+
+    if (parentDeathDateConflict) {
+      conflicts.push({
+        id: `parent-death-date-conflict:${relationship.id}`,
+        type: "parent_death_date_conflict",
+        title: "Parent death date conflict",
+        description: parentDeathDateConflict,
+        profiles: getUniqueProfiles([relationship]),
+        relationships: [relationship]
+      });
+    }
   }
 
   for (const [pairKey, pairRelationships] of relationshipsByPair) {
@@ -357,6 +375,41 @@ function pushToMap<T>(map: Map<string, T[]>, key: string, value: T) {
 
 function getProfilePairKey(firstProfileId: string, secondProfileId: string) {
   return [firstProfileId, secondProfileId].sort().join(":");
+}
+
+function getParentDeathDateConflictDescription(
+  relationship: DataQualityRelationship
+) {
+  if (
+    relationship.relationshipType !== RelationshipType.father &&
+    relationship.relationshipType !== RelationshipType.mother
+  ) {
+    return null;
+  }
+
+  const child = relationship.person;
+  const parent = relationship.relatedPerson;
+
+  if (!child.dateOfBirth || !parent.dateOfDeath) {
+    return null;
+  }
+
+  const hasFatherConflict =
+    relationship.relationshipType === RelationshipType.father &&
+    parent.dateOfDeath < addDays(child.dateOfBirth, -FATHER_BIRTH_WINDOW_DAYS);
+  const hasMotherConflict =
+    relationship.relationshipType === RelationshipType.mother &&
+    parent.dateOfDeath < child.dateOfBirth;
+
+  if (!hasFatherConflict && !hasMotherConflict) {
+    return null;
+  }
+
+  return `${parent.fullName} has a death date that conflicts with being the biological ${relationship.relationshipType} of ${child.fullName}.`;
+}
+
+function addDays(date: Date, days: number) {
+  return new Date(date.getTime() + days * MILLISECONDS_PER_DAY);
 }
 
 function getUniqueProfiles(relationships: DataQualityRelationship[]) {

@@ -192,7 +192,10 @@ describe("relationship service", () => {
       throw new Error("Expected parent age validation to fail");
     } catch (error) {
       expect(error).toBeInstanceOf(RelationshipInputError);
-      expect(error).toHaveProperty("message", "Parent must be older than child.");
+      expect(error).toHaveProperty(
+        "message",
+        "Parent must be born before the child."
+      );
     }
   });
 
@@ -213,7 +216,7 @@ describe("relationship service", () => {
         relatedPersonId: secondProfileId,
         relationshipType: "mother"
       })
-    ).rejects.toThrow("Parent must be older than child.");
+    ).rejects.toThrow("Parent must be born before the child.");
   });
 
   it("allows a parent relationship when the child date of birth is missing", async () => {
@@ -280,6 +283,10 @@ describe("relationship service", () => {
       expect(error).toBeInstanceOf(RelationshipParentAgeWarningError);
       expect(error).toHaveProperty("code", "PARENT_AGE_WARNING");
       expect(error).toHaveProperty("requiresConfirmation", true);
+      expect(error).toHaveProperty(
+        "message",
+        "This parent appears unusually young for a biological parent. Please confirm the dates are correct."
+      );
     }
   });
 
@@ -301,6 +308,209 @@ describe("relationship service", () => {
         relatedPersonId: secondProfileId,
         relationshipType: "father",
         confirmParentAgeWarning: true
+      })
+    ).resolves.toEqual(expect.objectContaining({ id: "relationship-created" }));
+  });
+
+  it("allows a father who died after the child was born", async () => {
+    mockSuccessfulRelationshipCreate();
+    mockPrisma.profile.findMany
+      .mockResolvedValueOnce([{ id: firstProfileId }, { id: secondProfileId }])
+      .mockResolvedValueOnce([
+        {
+          id: firstProfileId,
+          dateOfBirth: new Date("2015-01-01"),
+          dateOfDeath: null
+        },
+        {
+          id: secondProfileId,
+          dateOfBirth: new Date("1990-01-01"),
+          dateOfDeath: new Date("2016-01-01")
+        }
+      ]);
+    mockPrisma.relationship.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+
+    await expect(
+      createRelationship({
+        personId: firstProfileId,
+        relatedPersonId: secondProfileId,
+        relationshipType: "father"
+      })
+    ).resolves.toEqual(expect.objectContaining({ id: "relationship-created" }));
+  });
+
+  it("allows a father who died within 300 days before the child was born", async () => {
+    mockSuccessfulRelationshipCreate();
+    mockPrisma.profile.findMany
+      .mockResolvedValueOnce([{ id: firstProfileId }, { id: secondProfileId }])
+      .mockResolvedValueOnce([
+        {
+          id: firstProfileId,
+          dateOfBirth: new Date("2015-01-01"),
+          dateOfDeath: null
+        },
+        {
+          id: secondProfileId,
+          dateOfBirth: new Date("1990-01-01"),
+          dateOfDeath: new Date("2014-09-23")
+        }
+      ]);
+    mockPrisma.relationship.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+
+    await expect(
+      createRelationship({
+        personId: firstProfileId,
+        relatedPersonId: secondProfileId,
+        relationshipType: "father"
+      })
+    ).resolves.toEqual(expect.objectContaining({ id: "relationship-created" }));
+  });
+
+  it("blocks a father who died more than 300 days before the child was born", async () => {
+    mockPrisma.profile.findMany
+      .mockResolvedValueOnce([{ id: firstProfileId }, { id: secondProfileId }])
+      .mockResolvedValueOnce([
+        {
+          id: firstProfileId,
+          dateOfBirth: new Date("2015-01-01"),
+          dateOfDeath: null
+        },
+        {
+          id: secondProfileId,
+          dateOfBirth: new Date("1990-01-01"),
+          dateOfDeath: new Date("2014-03-01")
+        }
+      ]);
+    mockPrisma.relationship.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+
+    await expect(
+      createRelationship({
+        personId: firstProfileId,
+        relatedPersonId: secondProfileId,
+        relationshipType: "father"
+      })
+    ).rejects.toThrow(
+      "Father death date is too early to be the biological father of this child."
+    );
+  });
+
+  it("allows a mother who died on the child birth date", async () => {
+    mockSuccessfulRelationshipCreate();
+    mockPrisma.profile.findMany
+      .mockResolvedValueOnce([{ id: firstProfileId }, { id: secondProfileId }])
+      .mockResolvedValueOnce([
+        {
+          id: firstProfileId,
+          dateOfBirth: new Date("2015-01-01"),
+          dateOfDeath: null
+        },
+        {
+          id: secondProfileId,
+          dateOfBirth: new Date("1990-01-01"),
+          dateOfDeath: new Date("2015-01-01")
+        }
+      ]);
+    mockPrisma.relationship.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+
+    await expect(
+      createRelationship({
+        personId: firstProfileId,
+        relatedPersonId: secondProfileId,
+        relationshipType: "mother"
+      })
+    ).resolves.toEqual(expect.objectContaining({ id: "relationship-created" }));
+  });
+
+  it("blocks a mother who died before the child birth date", async () => {
+    mockPrisma.profile.findMany
+      .mockResolvedValueOnce([{ id: firstProfileId }, { id: secondProfileId }])
+      .mockResolvedValueOnce([
+        {
+          id: firstProfileId,
+          dateOfBirth: new Date("2015-01-01"),
+          dateOfDeath: null
+        },
+        {
+          id: secondProfileId,
+          dateOfBirth: new Date("1990-01-01"),
+          dateOfDeath: new Date("2014-12-31")
+        }
+      ]);
+    mockPrisma.relationship.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+
+    await expect(
+      createRelationship({
+        personId: firstProfileId,
+        relatedPersonId: secondProfileId,
+        relationshipType: "mother"
+      })
+    ).rejects.toThrow("Mother death date cannot be before the child birth date.");
+  });
+
+  it("allows a parent relationship when the parent date of death is missing", async () => {
+    mockSuccessfulRelationshipCreate();
+    mockPrisma.profile.findMany
+      .mockResolvedValueOnce([{ id: firstProfileId }, { id: secondProfileId }])
+      .mockResolvedValueOnce([
+        {
+          id: firstProfileId,
+          dateOfBirth: new Date("2015-01-01"),
+          dateOfDeath: null
+        },
+        {
+          id: secondProfileId,
+          dateOfBirth: new Date("1990-01-01"),
+          dateOfDeath: null
+        }
+      ]);
+    mockPrisma.relationship.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+
+    await expect(
+      createRelationship({
+        personId: firstProfileId,
+        relatedPersonId: secondProfileId,
+        relationshipType: "mother"
+      })
+    ).resolves.toEqual(expect.objectContaining({ id: "relationship-created" }));
+  });
+
+  it("allows a parent relationship with parent death date when child birth date is missing", async () => {
+    mockSuccessfulRelationshipCreate();
+    mockPrisma.profile.findMany
+      .mockResolvedValueOnce([{ id: firstProfileId }, { id: secondProfileId }])
+      .mockResolvedValueOnce([
+        {
+          id: firstProfileId,
+          dateOfBirth: null,
+          dateOfDeath: null
+        },
+        {
+          id: secondProfileId,
+          dateOfBirth: new Date("1990-01-01"),
+          dateOfDeath: new Date("1991-01-01")
+        }
+      ]);
+    mockPrisma.relationship.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+
+    await expect(
+      createRelationship({
+        personId: firstProfileId,
+        relatedPersonId: secondProfileId,
+        relationshipType: "father"
       })
     ).resolves.toEqual(expect.objectContaining({ id: "relationship-created" }));
   });
