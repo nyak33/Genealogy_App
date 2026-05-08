@@ -61,8 +61,8 @@ export default async function DataQualityPage() {
                   {group.normalizedName}
                 </h3>
                 <Link
-                  href="/profiles/merge"
-                  className="mt-2 inline-block text-sm font-medium text-moss hover:text-ink"
+                  href={getDuplicateGroupMergeHref(group.profiles)}
+                  className="mt-2 inline-block rounded border border-line bg-white px-3 py-2 text-sm font-semibold text-moss transition hover:border-moss hover:text-ink"
                 >
                   Review merge
                 </Link>
@@ -195,6 +195,21 @@ export default async function DataQualityPage() {
       </section>
     </section>
   );
+}
+
+export function getDuplicateGroupMergeHref(
+  profiles: Pick<DataQualityProfile, "id">[]
+) {
+  if (profiles.length !== 2) {
+    return "/profiles/merge";
+  }
+
+  const params = new URLSearchParams({
+    primaryId: profiles[0].id,
+    duplicateId: profiles[1].id
+  });
+
+  return `/profiles/merge?${params.toString()}`;
 }
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
