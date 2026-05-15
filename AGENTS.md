@@ -180,14 +180,14 @@ Example:
 User types:
 
 ```text
-sha
+car
 ```
 
 System may return:
 
 ```text
-Sha'rani bin Adnan
-Muhamad Syaqir bin Sha'rani
+Jordan Carter
+Alex Carter
 ```
 
 For MVP, PostgreSQL `ILIKE` search is acceptable.

@@ -9,10 +9,10 @@ import {
 describe("profile validators", () => {
   it("cleans fullName spacing while preserving casing", () => {
     const result = createProfileSchema.parse({
-      fullName: "  Muhamad   Syaqir  bin Sha'rani  "
+      fullName: "  Alex   Carter  "
     });
 
-    expect(result.fullName).toBe("Muhamad Syaqir bin Sha'rani");
+    expect(result.fullName).toBe("Alex Carter");
   });
 
   it("rejects empty fullName", () => {

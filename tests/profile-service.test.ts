@@ -33,7 +33,7 @@ describe("profile service", () => {
   it("searches case-insensitively against fullName and normalizedName", async () => {
     mockPrisma.profile.findMany.mockResolvedValueOnce([]);
 
-    await searchProfiles("SHA");
+    await searchProfiles("CAR");
 
     expect(mockPrisma.profile.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -42,13 +42,13 @@ describe("profile service", () => {
           OR: [
             {
               fullName: {
-                contains: "SHA",
+                contains: "CAR",
                 mode: "insensitive"
               }
             },
             {
               normalizedName: {
-                contains: "sha",
+                contains: "car",
                 mode: "insensitive"
               }
             }

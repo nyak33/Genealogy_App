@@ -69,7 +69,7 @@ person_id -> relationship_type -> related_person_id
 Wrong:
 
 ```text
-father_name = "Sha'rani bin Adnan"
+father_name = "Jordan Carter"
 ```
 
 ### 2.4 Avoid Premature Complexity
@@ -350,14 +350,14 @@ person_id has relationship_type with related_person_id
 Example:
 
 ```text
-Syaqir -> father -> Sha'rani
+Alex Carter -> father -> Jordan Carter
 ```
 
 This means:
 
-- `person_id` = Syaqir profile ID
+- `person_id` = Alex Carter profile ID
 - `relationship_type` = father
-- `related_person_id` = Sha'rani profile ID
+- `related_person_id` = Jordan Carter profile ID
 
 ---
 
@@ -604,7 +604,7 @@ CHECK (person_id <> related_person_id)
 This prevents:
 
 ```text
-Syaqir -> father -> Syaqir
+Alex Carter -> father -> Alex Carter
 ```
 
 ### Prevent Duplicate Exact Relationship
@@ -618,8 +618,8 @@ UNIQUE (person_id, related_person_id, relationship_type)
 This prevents duplicate rows like:
 
 ```text
-Syaqir -> father -> Sha'rani
-Syaqir -> father -> Sha'rani
+Alex Carter -> father -> Jordan Carter
+Alex Carter -> father -> Jordan Carter
 ```
 
 ### Optional: One Father and One Mother
@@ -1012,7 +1012,7 @@ Example response shape:
 {
   "profile": {
     "id": "uuid",
-    "full_name": "Muhamad Syaqir bin Sha'rani",
+    "full_name": "Alex Carter",
     "date_of_birth": "1997-12-20",
     "date_of_death": null,
     "gender": "male",
@@ -1021,7 +1021,7 @@ Example response shape:
   "relationships": {
     "father": {
       "id": "uuid",
-      "full_name": "Sha'rani bin Adnan"
+      "full_name": "Jordan Carter"
     },
     "mother": null,
     "spouses": [
@@ -1054,8 +1054,8 @@ INSERT INTO profiles (
     gender
 )
 VALUES (
-    'Muhamad Syaqir bin Sha''rani',
-    'muhamad syaqir bin sha''rani',
+    'Alex Carter',
+    'alex carter',
     '1997-12-20',
     'male'
 )
@@ -1268,8 +1268,8 @@ INSERT INTO profiles (
     gender
 )
 VALUES
-('Muhamad Syaqir bin Sha''rani', 'muhamad syaqir bin sha''rani', '1997-12-20', 'male'),
-('Sha''rani bin Adnan', 'sha''rani bin adnan', NULL, 'male'),
+('Alex Carter', 'alex carter', '1997-12-20', 'male'),
+('Jordan Carter', 'jordan carter', NULL, 'male'),
 ('Example Mother Name', 'example mother name', NULL, 'female');
 ```
 
@@ -1298,7 +1298,7 @@ For MVP, delete can be soft-disabled or require confirmation.
 ## Search
 
 ```text
-GET /profiles/search?q=sha
+GET /profiles/search?q=car
 ```
 
 ## Duplicate Check
@@ -1347,9 +1347,9 @@ Example flow:
 
 ```text
 Father field:
-User types "sha"
+User types "car"
 Dropdown shows matching profiles
-User selects "Sha'rani bin Adnan"
+User selects "Jordan Carter"
 Frontend stores selected profile ID
 Backend creates relationship using UUID
 ```

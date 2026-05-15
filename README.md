@@ -16,6 +16,7 @@ The goal of this MVP is to provide a clean foundation for recording family membe
 - View a simple profile-centered family tree
 - Block self-links, duplicate relationships, reverse spouse duplicates, multiple fathers, and multiple mothers
 - Review data quality with duplicate groups, relationship conflicts, and missing-info reports
+- Protect public deployments with a simple private access password
 - Seed safe fake local sample data
 
 ## Tech Stack
@@ -46,6 +47,17 @@ Update `.env` with your local PostgreSQL connection string:
 ```text
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/genealogy_mvp?schema=public"
 ```
+
+For any public deployment that contains real family data, set a strong private
+access password in the hosting environment:
+
+```text
+APP_ACCESS_PASSWORD="use-a-long-random-password"
+```
+
+When `APP_ACCESS_PASSWORD` is set, all pages and API routes require the
+password before profile data can be viewed or changed. In production, the app
+fails closed if `APP_ACCESS_PASSWORD` is missing.
 
 Run the Prisma migration:
 
@@ -121,6 +133,10 @@ The dashboard only provides safe fix tools: open profile pages, edit profile det
 
 Do not commit `.env` or real database credentials.
 
+Do not deploy real family data publicly without setting `APP_ACCESS_PASSWORD`.
+This private access gate is only a lightweight MVP protection layer, not a full
+multi-user account or permission system.
+
 Do not run destructive database commands unless you explicitly intend to wipe local data. In particular, avoid:
 
 ```bash
@@ -158,10 +174,11 @@ Included:
 - Basic family relationship display
 - Simple profile-centered tree view
 - PostgreSQL-backed storage
+- Lightweight private access gate for public deployments
 
 Not included yet:
 
-- Authentication
+- Full user accounts or role-based authentication
 - Advanced graph-style tree visualization
 - Media upload
 - Face tagging

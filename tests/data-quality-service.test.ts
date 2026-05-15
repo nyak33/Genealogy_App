@@ -187,7 +187,7 @@ describe("data quality service helpers", () => {
   });
 
   it("detects father death date conflicts", () => {
-    const child = profile("profile-1", "Muhamad Syaqir", {
+    const child = profile("profile-1", "Alex Carter", {
       dateOfBirth: new Date("1997-12-20")
     });
     const father = profile("profile-2", "Ab Basaar", {
@@ -202,14 +202,14 @@ describe("data quality service helpers", () => {
         expect.objectContaining({
           type: "parent_death_date_conflict",
           description:
-            "Ab Basaar has a death date that conflicts with being the biological father of Muhamad Syaqir."
+            "Ab Basaar has a death date that conflicts with being the biological father of Alex Carter."
         })
       ])
     );
   });
 
   it("detects mother death date conflicts", () => {
-    const child = profile("profile-1", "Muhamad Syaqir", {
+    const child = profile("profile-1", "Alex Carter", {
       dateOfBirth: new Date("1997-12-20")
     });
     const mother = profile("profile-2", "Nora Aziz", {
@@ -224,7 +224,7 @@ describe("data quality service helpers", () => {
         expect.objectContaining({
           type: "parent_death_date_conflict",
           description:
-            "Nora Aziz has a death date that conflicts with being the biological mother of Muhamad Syaqir."
+            "Nora Aziz has a death date that conflicts with being the biological mother of Alex Carter."
         })
       ])
     );

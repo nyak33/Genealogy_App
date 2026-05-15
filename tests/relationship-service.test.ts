@@ -617,7 +617,7 @@ describe("relationship service", () => {
           relationshipType: "father",
           relatedPerson: {
             id: firstProfileId,
-            fullName: "Muhamad Syaqir",
+            fullName: "Alex Carter",
             dateOfBirth: null,
             dateOfDeath: null
           }
@@ -629,7 +629,7 @@ describe("relationship service", () => {
     const relationships = await getProfileTreeRelationships(firstProfileId);
 
     expect(relationships.children[0].profile.fullName).toBe("Iman Amin");
-    expect(relationships.children[0].father?.fullName).toBe("Muhamad Syaqir");
+    expect(relationships.children[0].father?.fullName).toBe("Alex Carter");
     expect(relationships.children[0].mother).toBeNull();
   });
 
@@ -643,7 +643,7 @@ describe("relationship service", () => {
           relationshipType: "father",
           person: {
             id: thirdProfileId,
-            fullName: "Adam Syaqir",
+            fullName: "Adam Carter",
             dateOfBirth: new Date("2020-01-01"),
             dateOfDeath: null
           }
@@ -655,7 +655,7 @@ describe("relationship service", () => {
           relationshipType: "father",
           relatedPerson: {
             id: firstProfileId,
-            fullName: "Muhamad Syaqir",
+            fullName: "Alex Carter",
             dateOfBirth: null,
             dateOfDeath: null
           }
@@ -676,7 +676,7 @@ describe("relationship service", () => {
 
     const relationships = await getProfileTreeRelationships(firstProfileId);
 
-    expect(relationships.children[0].father?.fullName).toBe("Muhamad Syaqir");
+    expect(relationships.children[0].father?.fullName).toBe("Alex Carter");
     expect(relationships.children[0].mother?.fullName).toBe("Nora Aziz");
   });
 
@@ -691,7 +691,7 @@ describe("relationship service", () => {
           relationshipType: "spouse",
           person: {
             id: firstProfileId,
-            fullName: "Muhamad Syaqir",
+            fullName: "Alex Carter",
             dateOfBirth: null,
             dateOfDeath: null
           },
@@ -721,7 +721,7 @@ describe("relationship service", () => {
           relationshipType: "father",
           relatedPerson: {
             id: firstProfileId,
-            fullName: "Muhamad Syaqir",
+            fullName: "Alex Carter",
             dateOfBirth: null,
             dateOfDeath: null
           }
@@ -733,7 +733,7 @@ describe("relationship service", () => {
     const relationships = await getProfileTreeRelationships(firstProfileId);
 
     expect(relationships.spouses[0].profile.fullName).toBe("Nora Aziz");
-    expect(relationships.children[0].father?.fullName).toBe("Muhamad Syaqir");
+    expect(relationships.children[0].father?.fullName).toBe("Alex Carter");
     expect(relationships.children[0].mother).toBeNull();
   });
 

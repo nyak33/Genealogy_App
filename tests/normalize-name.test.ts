@@ -3,8 +3,6 @@ import { normalizeName } from "@/lib/utils/normalize-name";
 
 describe("normalizeName", () => {
   it("trims, lowercases, and collapses whitespace", () => {
-    expect(normalizeName("  Muhamad   Syaqir  bin   Sha'rani  ")).toBe(
-      "muhamad syaqir bin sha'rani"
-    );
+    expect(normalizeName("  Alex   Carter  ")).toBe("alex carter");
   });
 });

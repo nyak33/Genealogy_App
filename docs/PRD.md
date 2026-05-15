@@ -119,6 +119,7 @@ The MVP must include:
 8. Basic family relationship display
 9. PostgreSQL database
 10. UUID-based records
+11. Lightweight private access gate for public deployments
 
 ---
 
@@ -151,7 +152,11 @@ The database may prepare for some future features, but the UI and logic should n
 
 The system should be designed with the assumption that family data is sensitive.
 
-Even if authentication is not included in the first MVP, the codebase should not expose data unnecessarily.
+The MVP may use a lightweight private access password for public deployments so
+profile data is not exposed to the open internet. This is not a replacement for
+future user accounts, invite flows, or role-based permissions.
+
+Even if full authentication is not included in the first MVP, the codebase should not expose data unnecessarily.
 
 ### 8.2 Relationship First
 
@@ -160,7 +165,7 @@ The system must treat family relationships as structured links, not text.
 Wrong approach:
 
 ```text
-father_name = "Sha'rani bin Adnan"
+father_name = "Jordan Carter"
 ```
 
 Correct approach:
@@ -172,7 +177,7 @@ person_id -> relationship_type -> related_person_id
 Example:
 
 ```text
-Muhamad Syaqir -> father -> Sha'rani bin Adnan
+Alex Carter -> father -> Jordan Carter
 ```
 
 ### 8.3 Search Before Create
@@ -274,15 +279,15 @@ As a user, I want to search by partial name so that I can quickly find existing 
 User types:
 
 ```text
-sha
+car
 ```
 
 System may show:
 
 ```text
-Sha'rani bin Adnan
-Muhamad Syaqir bin Sha'rani
-Shahirah binti Sha'rani
+Jordan Carter
+Alex Carter
+Maya Carter
 ```
 
 ### Search Result Should Show
@@ -449,7 +454,7 @@ As a user, I want to quickly create a missing person while linking relationships
 
 When adding father:
 
-1. User types "Sha'rani".
+1. User types "Jordan Carter".
 2. No result is found.
 3. User clicks "Create new profile".
 4. System creates a minimal profile.
@@ -554,7 +559,7 @@ When creating a profile, check for possible matches using:
 ```text
 Possible duplicate profiles found:
 
-1. Sha'rani bin Adnan
+1. Jordan Carter
    Date of Birth: 1965-02-10
 
 Do you want to use this existing profile instead?
