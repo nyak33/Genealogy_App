@@ -296,6 +296,29 @@ If credentials are needed, use placeholders only.
 5. Always preserve user changes.
 6. If there are existing uncommitted user changes, avoid overwriting them.
 
+### Repository Git Identity
+
+This portfolio repository belongs to GitHub account `nyak33`.
+
+When the user explicitly asks to commit in this repo, use the Git author:
+
+```text
+nyak33 <147462123+nyak33@users.noreply.github.com>
+```
+
+The GitHub remote is:
+
+```text
+https://github.com/nyak33/Genealogy_App.git
+```
+
+The current publishing branch is `master`.
+
+Do not use placeholder author emails such as `faati@users.noreply.github.com`.
+Do not ask the user to paste a GitHub token into chat. If authentication is
+needed, ask the user to authenticate locally through GitHub Desktop, browser
+login, Git credential manager, or `gh auth login`.
+
 ---
 
 ## Backend Rules
